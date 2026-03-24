@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { width: 250px; padding: 15px; font-family: sans-serif; background: #1e1e1e; color: white; }
+        input { width: 100%; padding: 8px; margin-top: 10px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; margin-top: 15px; background: #ff6200; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #b34500; }
+        .status { font-size: 11px; margin-top: 8px; color: #aaa; text-align: center; }
+    </style>
+</head>
+<body>
+    <h3>LLM API Setup</h3>
+    <label for="apiKey">Paste your Key:</label>
+    <input type="password" id="apiKey" placeholder="...">
+    <button id="saveBtn">Save Key</button>
+    <div class="status" id="status"></div>
+
+    <script src="poptions.js"></script>
+</body>
+</html>
