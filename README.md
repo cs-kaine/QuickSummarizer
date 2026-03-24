@@ -18,14 +18,14 @@
 
 ## Known Bugs & Issues
 1. 429 TooManyRequests errors:
-    "Using a local llm would be ideal for testing (and as an optional feature, honestly), or even just a placeholder text if we're feeling lazy. It is just an API call after all, swapping around shouldn't be too difficult" -Kaine
+    > "Using a local llm would be ideal for testing (and as an optional feature, honestly), or even just a placeholder text if we're feeling lazy. It is just an API call after all, swapping around shouldn't be too difficult" -Kaine
 2. Height of popup window doesn't wrap around content properly
 3. The LLM can be real slow (wait times >5 seconds)
 
 ## Local Development Setup
 1. Install Node.js
 2. Using Node.js v18+, install the Google Gen AI SDK for TypeScript and JavaScript using the following npm command in cmd: 
-    npm install @google/genai
+    `npm install @google/genai`
 3. Open Chrome
 4. Open chrome://extensions
 5. Enable Developer Mode
@@ -40,7 +40,7 @@
 
 ## Notes
 - API keys should stay private. 
-- "The current implementation will need the user to generate and use their own keys. While this means devs don't foot the bill for tokens, it also adds a lot of friction to the user experience. Maybe there's a better solution?" -Kaine
+- > "The current implementation will need the user to generate and use their own keys. While this means devs don't foot the bill for tokens, it also adds a lot of friction to the user experience. Maybe there's a better solution?" -Kaine
 
 ## References
 - https://ai.google.dev/gemini-api/docs/quickstart#javascript_1
