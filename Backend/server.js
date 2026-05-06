@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-// 1. Import SDK Gemini 
+// Import SDK Gemini 
 const { GoogleGenAI } = require('@google/genai');
 
 const app = express();
@@ -24,7 +24,7 @@ app.get('/', (req, res) => {
     res.send('Quicksummarizer Backend Server is running!');
 });
 
-// Endpoint yang nerima URL
+// Endpoint URL
 app.post('/api/summarize', async (req, res) => {
     try {
         const { url, text } = req.body;
@@ -39,7 +39,7 @@ app.post('/api/summarize', async (req, res) => {
 
         console.log(`[LOG] Menerima request untuk merangkum: ${url ? url : 'Teks langsung'}`);
 
-        // 1. Cek Cache
+        // Cek Cache
         if (url && summaryCache[url]) {
             console.log(`[CACHE HIT] Mengambil data dari memori untuk: ${url}`);
             return res.status(200).json({
@@ -50,7 +50,7 @@ app.post('/api/summarize', async (req, res) => {
 
         console.log(`[CACHE MISS] Menghubungi Gemini untuk: ${url}`);
         
-        // 2. Proses AI dengan Google Gemini API
+        // Proses AI dengan Google Gemini API
         const sourceData = text ? text : url;
         
         const systemPrompt = `Anda adalah asisten cerdas yang bertugas merangkum berita untuk ekstensi browser.
@@ -83,7 +83,7 @@ ${sourceData}
         });
         const geminiResult = JSON.parse(response.text);
 
-        // 3. Simpan ke cache 
+        // Simpan ke cache 
         if (url) {
             summaryCache[url] = geminiResult;
         }
@@ -96,7 +96,27 @@ ${sourceData}
 
     } catch (error) {
         console.error("[ERROR] Terjadi kesalahan di endpoint summarize:", error);
-        res.status(500).json({ error: "Internal Server Error", details: error.message });
+        
+        // Provide better error messages
+        let errorMessage = error.message;
+        let statusCode = 500;
+        
+        if (error.status === 503) {
+            errorMessage = "Gemini API sedang overloaded. Silahkan coba lagi dalam beberapa detik.";
+            statusCode = 503;
+        } else if (error.status === 429) {
+            errorMessage = "Terlalu banyak request. Silahkan tunggu beberapa saat.";
+            statusCode = 429;
+        } else if (error.status === 401) {
+            errorMessage = "API Key tidak valid. Periksa konfigurasi.";
+            statusCode = 401;
+        }
+        
+        res.status(statusCode).json({ 
+            error: "Error", 
+            message: errorMessage,
+            details: error.message 
+        });
     }
 });
 
