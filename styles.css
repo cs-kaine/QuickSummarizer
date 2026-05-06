@@ -1,34 +1,26 @@
-#link-lens-popup {
-    position: absolute;
-    z-index: 2147483647;
-    width: max-content;
-    max-width: 350px;
-    /* height: auto !important;
-    min-height: 0 !important; */
-    padding: 15px;
-    background-color: #1e1e1e;
-    color: #efefef;
-    border-radius: 8px;
-    font-size: 14px;
-    line-height: 1.5;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+/*
+ * QuickSummarizer - styles.css
+ *
+ * NOTE: All popup, spinner, and animation styles are injected directly
+ * by script.js via a <style> tag to ensure they are encapsulated within
+ * the extension's DOM context and don't conflict with page stylesheets.
+ *
+ * This file is intentionally kept minimal. It can be used for any
+ * global baseline resets if needed in future.
+ */
+
+/* Baseline: ensure the popup is never affected by host-page resets */
+#qs-popup, #qs-popup * {
+    box-sizing: border-box;
+}
+#qs-intent-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #ff6200, #ffaa5e);
+    width: 0%;
+    z-index: 2147483646;
     pointer-events: none;
-    border: 1px solid #444;
-    font-family: sans-serif;
-    display: none; 
-}
-
-.spinner {
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,0.3);
-    border-radius: 50%;
-    border-top-color: #ff6200;
-    animation: spin 1s ease-in-out infinite;
-    margin-bottom: 10px;
-    display: inline-block;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
+    border-radius: 0 2px 2px 0;
 }

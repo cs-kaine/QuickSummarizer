@@ -1,21 +1,211 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <style>
-        body { width: 250px; padding: 15px; font-family: sans-serif; background: #1e1e1e; color: white; }
-        input { width: 100%; padding: 8px; margin-top: 10px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; margin-top: 15px; background: #ff6200; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #b34500; }
-        .status { font-size: 11px; margin-top: 8px; color: #aaa; text-align: center; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            width: 360px;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f1014;
+            color: #d0d5e0;
+            line-height: 1.6;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(105deg, #e85500 0%, #ff7a2e 100%);
+            padding: 18px 20px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-icon {
+            font-size: 20px;
+        }
+        .header-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 0.3px;
+        }
+        .header-sub {
+            font-size: 11px;
+            color: rgba(255,255,255,0.75);
+            font-weight: 400;
+            letter-spacing: 0.2px;
+        }
+
+        /* Body area */
+        .body {
+            padding: 18px 20px 20px;
+        }
+
+        .section-label {
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            color: #ff6200;
+            margin-bottom: 12px;
+        }
+
+        /* Step card */
+        .step {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            margin-bottom: 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #1e2128;
+            border-radius: 10px;
+            padding: 12px 14px;
+            transition: border-color 0.2s;
+        }
+        .step:last-child { margin-bottom: 0; }
+        .step:hover { border-color: rgba(255,98,0,0.3); }
+
+        .step-num {
+            background: linear-gradient(135deg, #ff6200, #ff9040);
+            color: white;
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 3px 10px rgba(255,98,0,0.3);
+        }
+
+        .step-body {
+            flex: 1;
+            padding-top: 1px;
+        }
+
+        .step-title {
+            font-weight: 700;
+            font-size: 13px;
+            color: #e8ecf4;
+            margin-bottom: 3px;
+        }
+
+        .step-desc {
+            font-size: 12px;
+            color: #7c8499;
+            line-height: 1.55;
+        }
+
+        /* Keyboard shortcut badge */
+        kbd {
+            display: inline-flex;
+            align-items: center;
+            background: #1a1d26;
+            border: 1px solid #2e3340;
+            border-bottom-width: 2px;
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 11px;
+            color: #ff8c42;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        /* Tip box */
+        .tip {
+            margin-top: 16px;
+            background: rgba(255,98,0,0.06);
+            border: 1px solid rgba(255,98,0,0.18);
+            border-radius: 10px;
+            padding: 11px 14px;
+            display: flex;
+            gap: 9px;
+            align-items: flex-start;
+        }
+        .tip-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+        .tip-text { font-size: 12px; color: #8c93a8; line-height: 1.55; }
+        .tip-text strong { color: #c8cdd8; font-weight: 600; }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid #171a20;
+            padding: 11px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .footer-brand {
+            font-size: 10px;
+            color: #2e3340;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .footer-tag {
+            font-size: 10px;
+            color: #2e3340;
+        }
     </style>
 </head>
 <body>
-    <h3>LLM API Setup</h3>
-    <label for="apiKey">Paste your Key:</label>
-    <input type="password" id="apiKey" placeholder="...">
-    <button id="saveBtn">Save Key</button>
-    <div class="status" id="status"></div>
 
-    <script src="poptions.js"></script>
+    <!-- Header -->
+    <div class="header">
+        <span class="header-icon">⚡</span>
+        <div>
+            <div class="header-title">QuickSummarizer</div>
+            <div class="header-sub">Hover-based AI news summarizer</div>
+        </div>
+    </div>
+
+    <!-- Steps -->
+    <div class="body">
+
+        <div class="section-label">How to use</div>
+
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <div class="step-title">Activate the extension</div>
+                <div class="step-desc">Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> to toggle ON. A notification will confirm it's active.</div>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <div class="step-title">Hover over any news headline</div>
+                <div class="step-desc">Hold your cursor over a link for <strong style="color:#c8cdd8;">1.5 seconds</strong>. A progress bar at the bottom of your screen will appear to confirm intent.</div>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <div class="step-title">Read the AI summary</div>
+                <div class="step-desc">A popup shows bullet-point highlights, sentiment (Positive / Negative / Neutral), and the article category — instantly.</div>
+            </div>
+        </div>
+
+        <!-- Tip -->
+        <div class="tip">
+            <span class="tip-icon">💡</span>
+            <span class="tip-text"><strong>Saves API tokens:</strong> The 2.5s hover delay filters out accidental passes. Only deliberate hovers trigger a Gemini API call. Repeated visits use cached results instantly.</span>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <span class="footer-brand">QuickSummarizer</span>
+        <span class="footer-tag">Powered by Gemini AI</span>
+    </div>
+
 </body>
 </html>
