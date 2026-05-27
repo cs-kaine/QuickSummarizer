@@ -58,7 +58,6 @@ style.innerHTML = `
         font-size: 13px;
         font-weight: 500;
         animation: qs-pulse 1.5s ease-in-out infinite;
-        /* NO transform/rotation on this element */
     }
     .qs-card {
         animation: qs-fadein 0.2s ease forwards;
@@ -137,8 +136,8 @@ document.body.appendChild(intentBar);
 // --- Hover delay config ---
 // 1500ms: intentional but snappy; filters casual link-scan passes
 // Progress bar cue appears at 500ms so the wait feels acknowledged, not silent
-const HOVER_DELAY_MS   = 1500;
-const INTENT_CUE_MS    = 500;
+const HOVER_DELAY_MS = 1500;
+const INTENT_CUE_MS  = 500;
 
 function resetState() {
     if (isPinned) return; // Block all resets while pinned
@@ -271,11 +270,23 @@ document.addEventListener('mouseover', (e) => {
 document.addEventListener('mouseout', (e) => {
     if (isPinned) return; // Don't do anything while pinned
 
-    // Check if moving outside both the link and the popup
     const isLeavingLink = currentLink && !currentLink.contains(e.relatedTarget);
     const isLeavingPopup = popup && !popup.contains(e.relatedTarget);
 
     if (isLeavingLink && isLeavingPopup) {
+        resetState();
+        currentLink = null;
+    }
+});
+
+// Prevent popup from closing when cursor moves within/out of it while unpinned
+popup.addEventListener('mouseout', (e) => {
+    if (isPinned) return; // Don't close popup while pinned
+
+    const isLeavingPopup = popup && !popup.contains(e.relatedTarget);
+    const isLeavingLink = currentLink && !currentLink.contains(e.relatedTarget);
+
+    if (isLeavingPopup && isLeavingLink) {
         resetState();
         currentLink = null;
     }
@@ -288,16 +299,16 @@ function togglePin() {
     const pinBtn = document.getElementById('qs-pin-btn');
     if (pinBtn) {
         if (isPinned) {
-            pinBtn.style.background = '#ff6200';
-            pinBtn.style.color = 'white';
+            pinBtn.style.background = 'white';
+            pinBtn.style.color = '#ff6200';
+            pinBtn.style.border = '2px solid #ff6200';
             pinBtn.innerHTML = '📌';
-            pinBtn.title = 'Pinned - Click to unpin';
         } else {
             pinBtn.style.background = 'rgba(255,255,255,0.15)';
             pinBtn.style.color = 'white';
+            pinBtn.style.border = '1px solid rgba(255,255,255,0.2)';
             pinBtn.innerHTML = '📍';
-            pinBtn.title = 'Click to pin';
-            // Close the popup now that it's unpinned
+            // Close popup when unpinned
             currentSummaryData = null;
             currentLink = null;
             popup.style.display = 'none';
@@ -305,72 +316,114 @@ function togglePin() {
     }
 }
 
+// --- Icon constants (lightweight SVG icons) ---
+const ICON_COPY = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+const ICON_SAVE_OUTLINE = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
+const ICON_SAVE_FILLED  = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
+
 function copyToClipboard() {
     if (!currentSummaryData) return;
-    
+
     const summaryText = Array.isArray(currentSummaryData.summary)
         ? currentSummaryData.summary.join('\n• ')
         : currentSummaryData.summary;
-    
+
     const fullText = `• ${summaryText}\n\nSentiment: ${currentSummaryData.sentiment || 'N/A'}\nCategory: ${currentSummaryData.category || 'N/A'}`;
-    
+
     navigator.clipboard.writeText(fullText).then(() => {
         const copyBtn = document.getElementById('qs-copy-btn');
         if (copyBtn) {
-            copyBtn.innerHTML = '✓ Copied!';
+            copyBtn.innerHTML = '<span style="font-size:12px;font-weight:600;">✓ Copied</span>';
             copyBtn.style.background = '#4ade80';
             copyBtn.style.color = '#0a1a0a';
-            copyBtn.style.fontWeight = '600';
-            copyBtn.style.fontSize = '12px';
-            copyBtn.style.opacity = '1';
+
             setTimeout(() => {
                 copyBtn.style.transition = 'opacity 0.12s ease, background 0.12s ease, color 0.12s ease';
                 copyBtn.style.opacity = '0.15';
                 setTimeout(() => {
-                    copyBtn.innerHTML = '📋';
+                    copyBtn.innerHTML = ICON_COPY;
                     copyBtn.style.background = 'rgba(255,255,255,0.08)';
                     copyBtn.style.color = '#bec5d1';
-                    copyBtn.style.fontWeight = '';
-                    copyBtn.style.fontSize = '14px';
                     copyBtn.style.opacity = '1';
                     setTimeout(() => { copyBtn.style.transition = 'all 0.2s ease'; }, 120);
                 }, 120);
             }, 700);
         }
-    }).catch(() => {
-        alert('Failed to copy to clipboard');
+    }).catch(() => alert('Failed to copy to clipboard'));
+}
+
+// Returns a Promise so it can be awaited when checking saved status
+function getSavedItems() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(['SavedItems'], (result) => {
+            resolve(result.SavedItems || []);
+        });
     });
 }
 
-function saveForLater() {
-    // TODO: Implement save for later functionality
-    // This will save the current summary to local storage or send to backend
+// Updates the save button visual state (saved vs unsaved)
+function setSaveBtnState(saveBtn, saved) {
+    if (saved) {
+        saveBtn.innerHTML = ICON_SAVE_FILLED;
+        saveBtn.style.background = 'rgba(74,222,128,0.15)';
+        saveBtn.style.color = '#4ade80';
+        saveBtn.style.border = '1px solid rgba(74,222,128,0.35)';
+        saveBtn.setAttribute('data-tip', 'Unsave');
+    } else {
+        saveBtn.innerHTML = ICON_SAVE_OUTLINE;
+        saveBtn.style.background = 'rgba(255,255,255,0.08)';
+        saveBtn.style.color = '#bec5d1';
+        saveBtn.style.border = '1px solid rgba(255,255,255,0.12)';
+        saveBtn.setAttribute('data-tip', 'Save for later');
+    }
+}
+
+// Toggle save/remove logic using Chrome Storage
+async function saveForLater() {
     if (!currentSummaryData) return;
-    
-    console.log('Saving for later:', currentSummaryData);
-    
-    // Show feedback
+
     const saveBtn = document.getElementById('qs-save-btn');
-    if (saveBtn) {
-        saveBtn.innerHTML = '✓ Saved!';
-        saveBtn.style.background = '#4ade80';
-        saveBtn.style.color = '#0a1a0a';
-        saveBtn.style.fontWeight = '600';
-        saveBtn.style.fontSize = '12px';
-        saveBtn.style.opacity = '1';
-        setTimeout(() => {
-            saveBtn.style.transition = 'opacity 0.12s ease, background 0.12s ease, color 0.12s ease';
-            saveBtn.style.opacity = '0.15';
-            setTimeout(() => {
-                saveBtn.innerHTML = '💾';
-                saveBtn.style.background = 'rgba(255,255,255,0.08)';
-                saveBtn.style.color = '#bec5d1';
-                saveBtn.style.fontWeight = '';
-                saveBtn.style.fontSize = '14px';
-                saveBtn.style.opacity = '1';
-                setTimeout(() => { saveBtn.style.transition = 'all 0.2s ease'; }, 120);
-            }, 120);
-        }, 700);
+    const url = currentLink ? currentLink.href : window.location.href;
+
+    // Fetch latest data from extension storage
+    const items = await getSavedItems();
+    const existingIndex = items.findIndex(item => item.url === url);
+    const alreadySaved = existingIndex !== -1;
+
+    // Click animation (fade out)
+    if (saveBtn) saveBtn.style.opacity = '0.15';
+
+    if (alreadySaved) {
+        // Remove if already saved
+        items.splice(existingIndex, 1);
+        chrome.storage.local.set({ SavedItems: items }, () => {
+            if (saveBtn) {
+                setTimeout(() => {
+                    setSaveBtnState(saveBtn, false);
+                    saveBtn.style.opacity = '1';
+                }, 120);
+            }
+        });
+    } else {
+        // Save entry to SavedItems
+        const entry = {
+            url,
+            title: document.title || url,
+            summary: currentSummaryData.summary,
+            sentiment: currentSummaryData.sentiment,
+            category: currentSummaryData.category,
+            savedAt: new Date().toISOString(),
+        };
+        items.push(entry);
+
+        chrome.storage.local.set({ SavedItems: items }, () => {
+            if (saveBtn) {
+                setTimeout(() => {
+                    setSaveBtnState(saveBtn, true);
+                    saveBtn.style.opacity = '1';
+                }, 120);
+            }
+        });
     }
 }
 
@@ -384,7 +437,7 @@ function sentimentStyle(sentiment) {
 }
 
 function renderSummary(data) {
-    currentSummaryData = data; // Store for copy/pin features
+    currentSummaryData = data;
     const ss = sentimentStyle(data.sentiment);
 
     const bullets = Array.isArray(data.summary)
@@ -444,17 +497,7 @@ function renderSummary(data) {
                     text-transform: uppercase;
                     letter-spacing: 1.2px;
                 ">AI Summary</span>
-                ${data.source === 'cache' ? `
-                    <span style="
-                        margin-left: auto;
-                        font-size: 10px;
-                        color: rgba(255,255,255,0.75);
-                        background: rgba(0,0,0,0.2);
-                        padding: 2px 8px;
-                        border-radius: 10px;
-                        font-weight: 500;
-                    ">⚡ Cached</span>` : ''}
-                <!-- Pin button in top right -->
+                <!-- Pin button -->
                 <button id="qs-pin-btn" style="
                     background: rgba(255,255,255,0.15);
                     border: 1px solid rgba(255,255,255,0.2);
@@ -487,91 +530,103 @@ function renderSummary(data) {
                 padding: 10px 13px;
                 display: flex;
                 align-items: center;
+                justify-content: space-between;
                 gap: 9px;
             ">
-                <!-- Sentiment chip -->
-                <div style="
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
-                    background: ${ss.bg};
-                    border: 1px solid ${ss.border};
-                    padding: 4px 10px 4px 8px;
-                    border-radius: 20px;
-                    flex-shrink: 0;
-                ">
-                    <span style="
-                        width: 6px; height: 6px;
-                        border-radius: 50%;
-                        background: ${ss.color};
-                        display: inline-block;
+                <!-- Sentiment & Category chips -->
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                        background: ${ss.bg};
+                        border: 1px solid ${ss.border};
+                        padding: 4px 10px 4px 8px;
+                        border-radius: 20px;
                         flex-shrink: 0;
-                    "></span>
-                    <span style="color: ${ss.color}; font-size: 11px; font-weight: 600;">${data.sentiment || 'N/A'}</span>
+                    ">
+                        <span style="
+                            width: 6px; height: 6px;
+                            border-radius: 50%;
+                            background: ${ss.color};
+                            display: inline-block;
+                            flex-shrink: 0;
+                        "></span>
+                        <span style="color: ${ss.color}; font-size: 11px; font-weight: 600;">${data.sentiment || 'N/A'}</span>
+                    </div>
+
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                        background: rgba(255,255,255,0.04);
+                        border: 1px solid rgba(255,255,255,0.1);
+                        padding: 4px 10px;
+                        border-radius: 20px;
+                        flex-shrink: 0;
+                    ">
+                        <span style="font-size: 11px;">🗂</span>
+                        <span style="color: #bec5d1; font-size: 11px; font-weight: 600;">${data.category || 'N/A'}</span>
+                    </div>
                 </div>
 
-                <!-- Category chip -->
-                <div style="
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
-                    background: rgba(255,255,255,0.04);
-                    border: 1px solid rgba(255,255,255,0.1);
-                    padding: 4px 10px;
-                    border-radius: 20px;
-                    flex-shrink: 0;
-                ">
-                    <span style="font-size: 11px;">🗂</span>
-                    <span style="color: #bec5d1; font-size: 11px; font-weight: 600;">${data.category || 'N/A'}</span>
-                </div>
-
-                <!-- Copy/Save buttons pushed to right -->
-                <div style="display: flex; gap: 7px; margin-left: auto;">
+                <!-- Copy & Save buttons -->
+                <div style="display: flex; gap: 6px;">
                     <button id="qs-copy-btn" class="qs-icon-btn" data-tip="Copy" style="
                         background: rgba(255,255,255,0.08);
                         border: 1px solid rgba(255,255,255,0.12);
                         color: #bec5d1;
                         height: 28px;
-                        padding: 0 9px;
+                        width: 32px;
                         border-radius: 7px;
                         cursor: pointer;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 14px;
                         transition: all 0.2s ease;
-                        white-space: nowrap;
-                    ">📋</button>
+                        padding: 0;
+                    "></button>
 
                     <button id="qs-save-btn" class="qs-icon-btn" data-tip="Save for later" style="
                         background: rgba(255,255,255,0.08);
                         border: 1px solid rgba(255,255,255,0.12);
                         color: #bec5d1;
                         height: 28px;
-                        padding: 0 9px;
+                        width: 32px;
                         border-radius: 7px;
                         cursor: pointer;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 14px;
                         transition: all 0.2s ease;
-                        white-space: nowrap;
-                    ">💾</button>
+                        padding: 0;
+                    "></button>
                 </div>
             </div>
         </div>
     `;
 
-    // Attach event listeners to buttons
-    setTimeout(() => {
-        const pinBtn = document.getElementById('qs-pin-btn');
+    // Attach event listeners and set initial icon state
+    setTimeout(async () => {
+        const pinBtn  = document.getElementById('qs-pin-btn');
         const copyBtn = document.getElementById('qs-copy-btn');
         const saveBtn = document.getElementById('qs-save-btn');
-        
-        if (pinBtn) pinBtn.addEventListener('click', togglePin);
-        if (copyBtn) copyBtn.addEventListener('click', copyToClipboard);
-        if (saveBtn) saveBtn.addEventListener('click', saveForLater);
+
+        if (pinBtn)  pinBtn.addEventListener('click', togglePin);
+
+        if (copyBtn) {
+            copyBtn.innerHTML = ICON_COPY;
+            copyBtn.addEventListener('click', copyToClipboard);
+        }
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', saveForLater);
+            // Async check: reflect saved state immediately on render
+            const url = currentLink ? currentLink.href : window.location.href;
+            const items = await getSavedItems();
+            const isSaved = items.some(item => item.url === url);
+            setSaveBtnState(saveBtn, isSaved);
+        }
     }, 0);
 }
 
@@ -619,7 +674,7 @@ async function getSummary(url) {
     }
 }
 
-// --- Toast ---
+// --- Toast notification ---
 function showToastNotification(isNowActive) {
     const existing = document.getElementById('qs-toast');
     if (existing) existing.remove();
