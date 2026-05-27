@@ -4,6 +4,9 @@ let currentLink = null;
 let isActive = false;
 let currentRequest = null;
 let requestInProgress = false;
+let isPinned = false;
+let currentSummaryData = null;
+isActive = true;
 
 // Inject global styles once — ONLY .qs-spinner-circle animates, not its parent or siblings
 const style = document.createElement('style');
@@ -19,11 +22,24 @@ style.innerHTML = `
         0%, 100% { opacity: 1; }
         50%       { opacity: 0.45; }
     }
+    @keyframes qs-shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position:  400px 0; }
+    }
+    .qs-skeleton {
+        background: linear-gradient(90deg, #1e2128 25%, #2b303d 50%, #1e2128 75%);
+        background-size: 800px 100%;
+        animation: qs-shimmer 1.4s ease-in-out infinite;
+        border-radius: 5px;
+    }
+    .qs-loading-card {
+        animation: qs-fadein 0.18s ease forwards;
+    }
     #qs-popup {
         position: absolute;
         z-index: 2147483647;
         display: none;
-        pointer-events: none;
+        pointer-events: auto;
     }
     /* Critical fix: only the circle element carries the spin animation */
     .qs-spinner-circle {
@@ -47,6 +63,32 @@ style.innerHTML = `
     }
     .qs-card {
         animation: qs-fadein 0.2s ease forwards;
+    }
+    .qs-icon-btn {
+        position: relative;
+    }
+    .qs-icon-btn::after {
+        content: attr(data-tip);
+        position: absolute;
+        bottom: calc(100% + 6px);
+        right: 0;
+        background: #1e2128;
+        color: #d8dde8;
+        font-size: 11px;
+        font-weight: 500;
+        white-space: nowrap;
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: 1px solid #2e3340;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(3px);
+        transition: opacity 0.15s ease, transform 0.15s ease;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .qs-icon-btn:hover::after {
+        opacity: 1;
+        transform: translateY(0);
     }
     /* Subtle bottom progress bar as intent cue */
     #qs-intent-bar {
@@ -100,6 +142,7 @@ const HOVER_DELAY_MS   = 1500;
 const INTENT_CUE_MS    = 500;
 
 function resetState() {
+    if (isPinned) return; // Block all resets while pinned
     clearTimeout(hoverTimer);
     clearTimeout(intentTimer);
     // Reset intent bar instantly
@@ -107,6 +150,7 @@ function resetState() {
     intentBar.style.width = '0%';
     if (currentRequest) { currentRequest.abort(); currentRequest = null; }
     requestInProgress = false;
+    currentSummaryData = null;
     popup.style.display = 'none';
 }
 
@@ -125,6 +169,7 @@ document.addEventListener('mousemove', (e) => {
 
 document.addEventListener('mouseover', (e) => {
     if (!isActive) return;
+    if (isPinned) return; // Don't process new hovers while pinned
 
     const link = e.target.closest('a');
     if (!link || !link.href.startsWith('http')) return;
@@ -147,27 +192,68 @@ document.addEventListener('mouseover', (e) => {
         popup.style.top  = `${lastMouseY + 4}px`;
         popup.style.display = 'block';
 
-        // Loading card — spinner is a standalone element, nothing wrapping it rotates
+        // Loading card — skeleton shimmer with cycling dynamic text
+        const loadingPhrases = ['Reading the article…', 'Analyzing content…', 'Summarizing key points…', 'Almost done…'];
+        let phraseIndex = 0;
         popup.innerHTML = `
-            <div style="
-                background: #141416;
-                border: 1px solid #262830;
-                border-radius: 12px;
-                padding: 13px 16px;
-                display: flex;
-                align-items: center;
-                gap: 11px;
-                box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-                width: 230px;
+            <div class="qs-loading-card" style="
+                background: #0f1014;
+                border: 1px solid #1e2128;
+                border-radius: 14px;
+                box-shadow: 0 24px 64px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,98,0,0.06), inset 0 1px 0 rgba(255,255,255,0.04);
+                width: 340px;
+                overflow: hidden;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             ">
-                <div class="qs-spinner-circle"></div>
-                <span class="qs-loading-text">Analyzing article…</span>
+                <div style="background:linear-gradient(105deg,#c44a00 0%,#e86a20 100%);padding:9px 14px;display:flex;align-items:center;gap:8px;">
+                    <div class="qs-skeleton" style="width:13px;height:13px;border-radius:3px;flex-shrink:0;"></div>
+                    <div class="qs-skeleton" style="width:80px;height:10px;"></div>
+                </div>
+                <div style="padding:10px 15px 12px 15px;display:flex;flex-direction:column;gap:10px;">
+                    <div style="display:flex;gap:10px;align-items:flex-start;">
+                        <div class="qs-skeleton" style="width:6px;height:6px;border-radius:50%;margin-top:6px;flex-shrink:0;"></div>
+                        <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+                            <div class="qs-skeleton" style="height:11px;width:100%;"></div>
+                            <div class="qs-skeleton" style="height:11px;width:75%;"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:flex-start;">
+                        <div class="qs-skeleton" style="width:6px;height:6px;border-radius:50%;margin-top:6px;flex-shrink:0;"></div>
+                        <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+                            <div class="qs-skeleton" style="height:11px;width:100%;"></div>
+                            <div class="qs-skeleton" style="height:11px;width:60%;"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:flex-start;">
+                        <div class="qs-skeleton" style="width:6px;height:6px;border-radius:50%;margin-top:6px;flex-shrink:0;"></div>
+                        <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+                            <div class="qs-skeleton" style="height:11px;width:88%;"></div>
+                            <div class="qs-skeleton" style="height:11px;width:50%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="background:#0a0b0e;border-top:1px solid #1a1d24;padding:10px 13px;display:flex;align-items:center;gap:8px;">
+                    <div class="qs-spinner-circle" style="flex-shrink:0;"></div>
+                    <span id="qs-loading-phrase" style="color:#666c7a;font-size:11.5px;font-weight:500;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;transition:opacity 0.3s ease;">Reading the article…</span>
+                </div>
             </div>
         `;
+        const phraseEl = document.getElementById('qs-loading-phrase');
+        const phraseInterval = setInterval(() => {
+            if (!phraseEl || !document.contains(phraseEl)) { clearInterval(phraseInterval); return; }
+            if (phraseIndex >= loadingPhrases.length - 1) { clearInterval(phraseInterval); return; }
+            phraseEl.style.opacity = '0';
+            setTimeout(() => {
+                phraseIndex += 1;
+                phraseEl.textContent = loadingPhrases[phraseIndex];
+                phraseEl.style.opacity = '1';
+            }, 300);
+        }, 1800);
 
         requestInProgress = true;
         const data = await getSummary(link.href);
         requestInProgress = false;
+        clearInterval(phraseInterval);
 
         // Snap bar back
         intentBar.style.transition = 'none';
@@ -184,13 +270,230 @@ document.addEventListener('mouseover', (e) => {
 });
 
 document.addEventListener('mouseout', (e) => {
-    if (currentLink && !currentLink.contains(e.relatedTarget)) {
+    if (isPinned) return; // Don't do anything while pinned
+
+    // Check if moving outside both the link and the popup
+    const isLeavingLink = currentLink && !currentLink.contains(e.relatedTarget);
+    const isLeavingPopup = popup && !popup.contains(e.relatedTarget);
+
+    if (isLeavingLink && isLeavingPopup) {
         resetState();
         currentLink = null;
     }
 });
 
 // --- Render helpers ---
+
+function togglePin() {
+    isPinned = !isPinned;
+    const pinBtn = document.getElementById('qs-pin-btn');
+    if (pinBtn) {
+        if (isPinned) {
+            pinBtn.style.background = '#ff6200';
+            pinBtn.style.color = 'white';
+            pinBtn.innerHTML = '📌';
+            pinBtn.title = 'Pinned - Click to unpin';
+        } else {
+            pinBtn.style.background = 'rgba(255,255,255,0.15)';
+            pinBtn.style.color = 'white';
+            pinBtn.innerHTML = '📍';
+            pinBtn.title = 'Click to pin';
+            // Close the popup now that it's unpinned
+            currentSummaryData = null;
+            currentLink = null;
+            popup.style.display = 'none';
+        }
+    }
+}
+
+function copyToClipboard() {
+    if (!currentSummaryData) return;
+    
+    const summaryText = Array.isArray(currentSummaryData.summary)
+        ? currentSummaryData.summary.join('\n• ')
+        : currentSummaryData.summary;
+    
+    const fullText = `• ${summaryText}\n\nSentiment: ${currentSummaryData.sentiment || 'N/A'}\nCategory: ${currentSummaryData.category || 'N/A'}`;
+    
+    navigator.clipboard.writeText(fullText).then(() => {
+        const copyBtn = document.getElementById('qs-copy-btn');
+        if (copyBtn) {
+            copyBtn.innerHTML = '✓ Copied!';
+            copyBtn.style.background = '#4ade80';
+            copyBtn.style.color = '#0a1a0a';
+            copyBtn.style.fontWeight = '600';
+            copyBtn.style.fontSize = '12px';
+            copyBtn.style.opacity = '1';
+            setTimeout(() => {
+                copyBtn.style.transition = 'opacity 0.12s ease, background 0.12s ease, color 0.12s ease';
+                copyBtn.style.opacity = '0.15';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '📋';
+                    copyBtn.style.background = 'rgba(255,255,255,0.08)';
+                    copyBtn.style.color = '#bec5d1';
+                    copyBtn.style.fontWeight = '';
+                    copyBtn.style.fontSize = '14px';
+                    copyBtn.style.opacity = '1';
+                    setTimeout(() => { copyBtn.style.transition = 'all 0.2s ease'; }, 120);
+                }, 120);
+            }, 700);
+        }
+    }).catch(() => {
+        alert('Failed to copy to clipboard');
+    });
+}
+
+async function saveSummary() {
+
+    console.log('SAVE CLICKED');
+
+    if (!currentSummaryData || !currentLink) {
+        console.log('Missing summary or link');
+        return;
+    }
+
+    try {
+
+        chrome.storage.local.get(['savedSummaries'], (result) => {
+
+            const saved = result.savedSummaries || [];
+
+            const newItem = {
+                id: Date.now(),
+                url: currentLink.href,
+                title: document.title,
+                summary: currentSummaryData.summary,
+                sentiment: currentSummaryData.sentiment || 'N/A',
+                category: currentSummaryData.category || 'Other',
+                savedAt: new Date().toISOString()
+            };
+
+            const alreadyExists = saved.some(
+                item => item.url === newItem.url
+            );
+
+            if (!alreadyExists) {
+                saved.unshift(newItem);
+
+                chrome.storage.local.set({
+                    savedSummaries: saved
+                }, () => {
+
+                    console.log('Saved successfully');
+
+                    const saveBtn =
+                        document.getElementById('qs-save-btn');
+
+                    if (saveBtn) {
+
+                        saveBtn.innerHTML = '🗑';
+
+                        saveBtn.style.background = '#ef4444';
+                        saveBtn.style.color = '#08111f';
+
+                    }
+                });
+
+            } else {
+                removeSavedSummary(newItem.url);
+            }
+
+        });
+
+    } catch (err) {
+        console.error(
+            '[QuickSummarizer] Failed to save summary:',
+            err
+        );
+    }
+}
+
+function removeSavedSummary(url) {
+
+    chrome.storage.local.get(['savedSummaries'], (result) => {
+
+        const saved = result.savedSummaries || [];
+
+        const updated = saved.filter(item => item.url !== url);
+
+        chrome.storage.local.set({
+            savedSummaries: updated
+        }, () => {
+
+            console.log('Removed from saved');
+
+            const saveBtn =
+                document.getElementById('qs-save-btn');
+
+            if (saveBtn) {
+
+                saveBtn.innerHTML = '💾';
+
+                saveBtn.style.background =
+                    'rgba(255,255,255,0.08)';
+
+                saveBtn.style.color = '#bec5d1';
+            }
+
+        });
+
+    });
+
+}
+
+function saveForLater() {
+    // TODO: Implement save for later functionality
+    // This will save the current summary to local storage or send to backend
+    if (!currentSummaryData) return;
+    
+    console.log('Saving for later:', currentSummaryData);
+    
+    // Show feedback
+    const saveBtn = document.getElementById('qs-save-btn');
+    chrome.storage.local.get(['savedSummaries'], (result) => {
+
+    const saved = result.savedSummaries || [];
+
+    const exists = saved.some(
+        item => item.url === currentLink?.href
+    );
+
+    if (exists && saveBtn) {
+
+        saveBtn.innerHTML = '🗑';
+
+        saveBtn.style.background = '#ef4444';
+        saveBtn.style.color = 'white';
+
+        saveBtn.setAttribute(
+            'data-tip',
+            'Remove saved summary'
+        );
+    }
+
+});
+    if (saveBtn) {
+        saveBtn.innerHTML = '✓ Saved!';
+        saveBtn.style.background = '#4ade80';
+        saveBtn.style.color = '#0a1a0a';
+        saveBtn.style.fontWeight = '600';
+        saveBtn.style.fontSize = '12px';
+        saveBtn.style.opacity = '1';
+        setTimeout(() => {
+            saveBtn.style.transition = 'opacity 0.12s ease, background 0.12s ease, color 0.12s ease';
+            saveBtn.style.opacity = '0.15';
+            setTimeout(() => {
+                saveBtn.innerHTML = '💾';
+                saveBtn.style.background = 'rgba(255,255,255,0.08)';
+                saveBtn.style.color = '#bec5d1';
+                saveBtn.style.fontWeight = '';
+                saveBtn.style.fontSize = '14px';
+                saveBtn.style.opacity = '1';
+                setTimeout(() => { saveBtn.style.transition = 'all 0.2s ease'; }, 120);
+            }, 120);
+        }, 700);
+    }
+}
 
 function sentimentStyle(sentiment) {
     const s = (sentiment || '').toLowerCase();
@@ -202,6 +505,7 @@ function sentimentStyle(sentiment) {
 }
 
 function renderSummary(data) {
+    currentSummaryData = data; // Store for copy/pin features
     const ss = sentimentStyle(data.sentiment);
 
     const bullets = Array.isArray(data.summary)
@@ -271,6 +575,23 @@ function renderSummary(data) {
                         border-radius: 10px;
                         font-weight: 500;
                     ">⚡ Cached</span>` : ''}
+                <!-- Pin button in top right -->
+                <button id="qs-pin-btn" style="
+                    background: rgba(255,255,255,0.15);
+                    border: 1px solid rgba(255,255,255,0.2);
+                    color: white;
+                    width: 26px;
+                    height: 26px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 12px;
+                    transition: all 0.2s ease;
+                    padding: 0;
+                    margin-left: auto;
+                ">📍</button>
             </div>
 
             <!-- Bullet points -->
@@ -284,10 +605,10 @@ function renderSummary(data) {
             <div style="
                 background: #0a0b0e;
                 border-top: 1px solid #1a1d24;
-                padding: 9px 13px;
+                padding: 10px 13px;
                 display: flex;
                 align-items: center;
-                gap: 7px;
+                gap: 9px;
             ">
                 <!-- Sentiment chip -->
                 <div style="
@@ -298,6 +619,7 @@ function renderSummary(data) {
                     border: 1px solid ${ss.border};
                     padding: 4px 10px 4px 8px;
                     border-radius: 20px;
+                    flex-shrink: 0;
                 ">
                     <span style="
                         width: 6px; height: 6px;
@@ -318,17 +640,60 @@ function renderSummary(data) {
                     border: 1px solid rgba(255,255,255,0.1);
                     padding: 4px 10px;
                     border-radius: 20px;
+                    flex-shrink: 0;
                 ">
                     <span style="font-size: 11px;">🗂</span>
                     <span style="color: #bec5d1; font-size: 11px; font-weight: 600;">${data.category || 'N/A'}</span>
                 </div>
 
-                <div style="margin-left: auto;">
-                    <span style="color: #2a2f3a; font-size: 10px; font-weight: 500; letter-spacing: 0.4px;">quicksummarizer</span>
+                <!-- Copy/Save buttons pushed to right -->
+                <div style="display: flex; gap: 7px; margin-left: auto;">
+                    <button id="qs-copy-btn" class="qs-icon-btn" data-tip="Copy" style="
+                        background: rgba(255,255,255,0.08);
+                        border: 1px solid rgba(255,255,255,0.12);
+                        color: #bec5d1;
+                        height: 28px;
+                        padding: 0 9px;
+                        border-radius: 7px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 14px;
+                        transition: all 0.2s ease;
+                        white-space: nowrap;
+                    ">📋</button>
+
+                    <button id="qs-save-btn" class="qs-icon-btn" data-tip="Save for later" style="
+                        background: rgba(255,255,255,0.08);
+                        border: 1px solid rgba(255,255,255,0.12);
+                        color: #bec5d1;
+                        height: 28px;
+                        padding: 0 9px;
+                        border-radius: 7px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 14px;
+                        transition: all 0.2s ease;
+                        white-space: nowrap;
+                    ">💾</button>
                 </div>
             </div>
         </div>
     `;
+
+    // Attach event listeners to buttons
+    setTimeout(() => {
+        const pinBtn = document.getElementById('qs-pin-btn');
+        const copyBtn = document.getElementById('qs-copy-btn');
+        const saveBtn = document.getElementById('qs-save-btn');
+        
+        if (pinBtn) pinBtn.addEventListener('click', togglePin);
+        if (copyBtn) copyBtn.addEventListener('click', copyToClipboard);
+        if (saveBtn) saveBtn.addEventListener('click', saveSummary);
+    }, 0);
 }
 
 function buildErrorCard(msg) {
