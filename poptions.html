@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <link rel="stylesheet" href="styles.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -193,11 +194,16 @@
             </div>
         </div>
 
-        <!-- Tip -->
-        <div class="tip">
-            <span class="tip-icon">💡</span>
-            <span class="tip-text"><strong>Saves API tokens:</strong> The 2.5s hover delay filters out accidental passes. Only deliberate hovers trigger a Gemini API call. Repeated visits use cached results instantly.</span>
+        <!-- Saved summaries -->
+<div class="saved-section">
+    <div class="section-label">Saved Summaries</div>
+
+    <div id="saved-list" class="saved-list">
+        <div class="empty-state">
+            No saved summaries yet.
         </div>
+    </div>
+</div>
 
     </div>
 
@@ -206,6 +212,8 @@
         <span class="footer-brand">QuickSummarizer</span>
         <span class="footer-tag">Powered by Gemini AI</span>
     </div>
+
+<script src="popup.js"></script>
 
 </body>
 </html>

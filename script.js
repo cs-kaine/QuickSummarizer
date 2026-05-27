@@ -6,6 +6,7 @@ let currentRequest = null;
 let requestInProgress = false;
 let isPinned = false;
 let currentSummaryData = null;
+isActive = true;
 
 // Inject global styles once — ONLY .qs-spinner-circle animates, not its parent or siblings
 const style = document.createElement('style');
@@ -342,6 +343,104 @@ function copyToClipboard() {
     });
 }
 
+async function saveSummary() {
+
+    console.log('SAVE CLICKED');
+
+    if (!currentSummaryData || !currentLink) {
+        console.log('Missing summary or link');
+        return;
+    }
+
+    try {
+
+        chrome.storage.local.get(['savedSummaries'], (result) => {
+
+            const saved = result.savedSummaries || [];
+
+            const newItem = {
+                id: Date.now(),
+                url: currentLink.href,
+                title: document.title,
+                summary: currentSummaryData.summary,
+                sentiment: currentSummaryData.sentiment || 'N/A',
+                category: currentSummaryData.category || 'Other',
+                savedAt: new Date().toISOString()
+            };
+
+            const alreadyExists = saved.some(
+                item => item.url === newItem.url
+            );
+
+            if (!alreadyExists) {
+                saved.unshift(newItem);
+
+                chrome.storage.local.set({
+                    savedSummaries: saved
+                }, () => {
+
+                    console.log('Saved successfully');
+
+                    const saveBtn =
+                        document.getElementById('qs-save-btn');
+
+                    if (saveBtn) {
+
+                        saveBtn.innerHTML = '🗑';
+
+                        saveBtn.style.background = '#ef4444';
+                        saveBtn.style.color = '#08111f';
+
+                    }
+                });
+
+            } else {
+                removeSavedSummary(newItem.url);
+            }
+
+        });
+
+    } catch (err) {
+        console.error(
+            '[QuickSummarizer] Failed to save summary:',
+            err
+        );
+    }
+}
+
+function removeSavedSummary(url) {
+
+    chrome.storage.local.get(['savedSummaries'], (result) => {
+
+        const saved = result.savedSummaries || [];
+
+        const updated = saved.filter(item => item.url !== url);
+
+        chrome.storage.local.set({
+            savedSummaries: updated
+        }, () => {
+
+            console.log('Removed from saved');
+
+            const saveBtn =
+                document.getElementById('qs-save-btn');
+
+            if (saveBtn) {
+
+                saveBtn.innerHTML = '💾';
+
+                saveBtn.style.background =
+                    'rgba(255,255,255,0.08)';
+
+                saveBtn.style.color = '#bec5d1';
+            }
+
+        });
+
+    });
+
+}
+
 function saveForLater() {
     // TODO: Implement save for later functionality
     // This will save the current summary to local storage or send to backend
@@ -351,6 +450,28 @@ function saveForLater() {
     
     // Show feedback
     const saveBtn = document.getElementById('qs-save-btn');
+    chrome.storage.local.get(['savedSummaries'], (result) => {
+
+    const saved = result.savedSummaries || [];
+
+    const exists = saved.some(
+        item => item.url === currentLink?.href
+    );
+
+    if (exists && saveBtn) {
+
+        saveBtn.innerHTML = '🗑';
+
+        saveBtn.style.background = '#ef4444';
+        saveBtn.style.color = 'white';
+
+        saveBtn.setAttribute(
+            'data-tip',
+            'Remove saved summary'
+        );
+    }
+
+});
     if (saveBtn) {
         saveBtn.innerHTML = '✓ Saved!';
         saveBtn.style.background = '#4ade80';
@@ -571,7 +692,7 @@ function renderSummary(data) {
         
         if (pinBtn) pinBtn.addEventListener('click', togglePin);
         if (copyBtn) copyBtn.addEventListener('click', copyToClipboard);
-        if (saveBtn) saveBtn.addEventListener('click', saveForLater);
+        if (saveBtn) saveBtn.addEventListener('click', saveSummary);
     }, 0);
 }
 
