@@ -60,6 +60,7 @@ REQUIRED RULES:
 - Your output MUST be valid JSON format.
 - Do not add any text before or after the JSON block.
 - Do not use markdown formatting like \`\`\`json.
+- The summary should be delivered in the same language as the input text.
 - JSON must have the exact structure like this:
 {
   "summary": ["most important point 1", "most important point 2", "most important point 3"],
@@ -72,9 +73,9 @@ News article to summarize:
 ${sourceData}
 """`;
 
-        // Calling Gemini 2.5 Flash model 
+        // Calling Gemini 3.1 flash lite 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: "gemini-3.1-flash-lite",
             contents: systemPrompt,
             config: {
                 responseMimeType: "application/json", 

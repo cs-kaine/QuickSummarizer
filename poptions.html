@@ -2,7 +2,6 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="styles.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -24,9 +23,7 @@
             align-items: center;
             gap: 10px;
         }
-        .header-icon {
-            font-size: 20px;
-        }
+        .header-icon { font-size: 20px; }
         .header-title {
             font-size: 16px;
             font-weight: 800;
@@ -37,13 +34,17 @@
             font-size: 11px;
             color: rgba(255,255,255,0.75);
             font-weight: 400;
-            letter-spacing: 0.2px;
         }
 
-        /* Body area */
+        /* Body */
         .body {
             padding: 18px 20px 20px;
+            max-height: 520px;
+            overflow-y: auto;
         }
+        .body::-webkit-scrollbar { width: 4px; }
+        .body::-webkit-scrollbar-track { background: transparent; }
+        .body::-webkit-scrollbar-thumb { background: #2e3340; border-radius: 4px; }
 
         .section-label {
             font-size: 9.5px;
@@ -54,7 +55,7 @@
             margin-bottom: 12px;
         }
 
-        /* Step card */
+        /* Step cards */
         .step {
             display: flex;
             gap: 14px;
@@ -83,26 +84,15 @@
             flex-shrink: 0;
             box-shadow: 0 3px 10px rgba(255,98,0,0.3);
         }
-
-        .step-body {
-            flex: 1;
-            padding-top: 1px;
-        }
-
+        .step-body { flex: 1; padding-top: 1px; }
         .step-title {
             font-weight: 700;
             font-size: 13px;
             color: #e8ecf4;
             margin-bottom: 3px;
         }
+        .step-desc { font-size: 12px; color: #7c8499; line-height: 1.55; }
 
-        .step-desc {
-            font-size: 12px;
-            color: #7c8499;
-            line-height: 1.55;
-        }
-
-        /* Keyboard shortcut badge */
         kbd {
             display: inline-flex;
             align-items: center;
@@ -118,20 +108,107 @@
             letter-spacing: 0.3px;
         }
 
-        /* Tip box */
-        .tip {
-            margin-top: 16px;
-            background: rgba(255,98,0,0.06);
-            border: 1px solid rgba(255,98,0,0.18);
-            border-radius: 10px;
-            padding: 11px 14px;
-            display: flex;
-            gap: 9px;
-            align-items: flex-start;
+        /* Divider between sections */
+        .section-divider {
+            border: none;
+            border-top: 1px solid #1a1d24;
+            margin: 18px 0;
         }
-        .tip-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
-        .tip-text { font-size: 12px; color: #8c93a8; line-height: 1.55; }
-        .tip-text strong { color: #c8cdd8; font-weight: 600; }
+
+        /* Saved summaries */
+        .saved-section { margin-top: 0; }
+
+        .saved-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 24px 16px;
+            color: #3a3f4d;
+            font-size: 12px;
+            background: rgba(255,255,255,0.02);
+            border: 1px dashed #1e2128;
+            border-radius: 10px;
+        }
+
+        .saved-item {
+            position: relative;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #1e2128;
+            border-radius: 10px;
+            padding: 12px 14px;
+            transition: border-color 0.2s;
+        }
+        .saved-item:hover { border-color: rgba(255,98,0,0.25); }
+
+        .saved-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #d8dde8;
+            margin-bottom: 6px;
+            padding-right: 24px;
+            line-height: 1.4;
+            /* Clamp to 2 lines */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .saved-summary {
+            font-size: 11.5px;
+            color: #7c8499;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            /* Clamp to 2 lines */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .saved-meta {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .saved-chip {
+            font-size: 10.5px;
+            font-weight: 600;
+            color: #8c93a8;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #2a2f3a;
+            padding: 2px 9px;
+            border-radius: 20px;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid #2a2f3a;
+            color: #4a4f60;
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            line-height: 1;
+        }
+        .remove-btn:hover {
+            background: rgba(239,68,68,0.15);
+            border-color: rgba(239,68,68,0.3);
+            color: #ef4444;
+        }
 
         /* Footer */
         .footer {
@@ -148,10 +225,7 @@
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
-        .footer-tag {
-            font-size: 10px;
-            color: #2e3340;
-        }
+        .footer-tag { font-size: 10px; color: #2e3340; }
     </style>
 </head>
 <body>
@@ -165,7 +239,7 @@
         </div>
     </div>
 
-    <!-- Steps -->
+    <!-- Body -->
     <div class="body">
 
         <div class="section-label">How to use</div>
@@ -194,16 +268,15 @@
             </div>
         </div>
 
-        <!-- Saved summaries -->
-<div class="saved-section">
-    <div class="section-label">Saved Summaries</div>
+        <hr class="section-divider">
 
-    <div id="saved-list" class="saved-list">
-        <div class="empty-state">
-            No saved summaries yet.
+        <!-- Saved summaries -->
+        <div class="saved-section">
+            <div class="section-label">Saved Summaries</div>
+            <div id="saved-list" class="saved-list">
+                <div class="empty-state">No saved summaries yet.</div>
+            </div>
         </div>
-    </div>
-</div>
 
     </div>
 
@@ -214,6 +287,5 @@
     </div>
 
 <script src="popup.js"></script>
-
 </body>
 </html>
