@@ -8,7 +8,6 @@ let isPinned = false;
 let currentSummaryData = null;
 isActive = true;
 
-// Inject global styles once — ONLY .qs-spinner-circle animates, not its parent or siblings
 const style = document.createElement('style');
 style.innerHTML = `
     @keyframes qs-spin {
@@ -134,17 +133,14 @@ const intentBar = document.createElement('div');
 intentBar.id = 'qs-intent-bar';
 document.body.appendChild(intentBar);
 
-// --- Hover delay config ---
-// 1500ms: intentional but snappy; filters casual link-scan passes
-// Progress bar cue appears at 500ms so the wait feels acknowledged, not silent
 const HOVER_DELAY_MS = 1500;
 const INTENT_CUE_MS  = 500;
 
 function resetState() {
-    if (isPinned) return; // Block all resets while pinned
+    if (isPinned) return; 
     clearTimeout(hoverTimer);
     clearTimeout(intentTimer);
-    // Reset intent bar instantly
+
     intentBar.style.transition = 'none';
     intentBar.style.width = '0%';
     if (currentRequest) { currentRequest.abort(); currentRequest = null; }
@@ -168,7 +164,7 @@ document.addEventListener('mousemove', (e) => {
 
 document.addEventListener('mouseover', (e) => {
     if (!isActive) return;
-    if (isPinned) return; // Don't process new hovers while pinned
+    if (isPinned) return; 
 
     const link = e.target.closest('a');
     if (!link || !link.href.startsWith('http')) return;
@@ -269,7 +265,7 @@ document.addEventListener('mouseover', (e) => {
 });
 
 document.addEventListener('mouseout', (e) => {
-    if (isPinned) return; // Don't do anything while pinned
+    if (isPinned) return; 
 
     const isLeavingLink = currentLink && !currentLink.contains(e.relatedTarget);
     const isLeavingPopup = popup && !popup.contains(e.relatedTarget);
@@ -282,7 +278,7 @@ document.addEventListener('mouseout', (e) => {
 
 // Prevent popup from closing when cursor moves within/out of it while unpinned
 popup.addEventListener('mouseout', (e) => {
-    if (isPinned) return; // Don't close popup while pinned
+    if (isPinned) return; 
 
     const isLeavingPopup = popup && !popup.contains(e.relatedTarget);
     const isLeavingLink = currentLink && !currentLink.contains(e.relatedTarget);
@@ -293,22 +289,19 @@ popup.addEventListener('mouseout', (e) => {
     }
 });
 
-// --- Render helpers ---
 
 function togglePin() {
     isPinned = !isPinned;
     const pinBtn = document.getElementById('qs-pin-btn');
     if (pinBtn) {
         if (isPinned) {
-            pinBtn.style.background = 'white';
-            pinBtn.style.color = '#ff6200';
-            pinBtn.style.border = '2px solid #ff6200';
-            pinBtn.innerHTML = '📌';
+            pinBtn.style.background = 'rgba(255,255,255,0.2)';
+            pinBtn.style.border = '1px solid rgba(255,255,255,0.4)';
+            pinBtn.innerHTML = ICON_PIN_FILLED;
         } else {
-            pinBtn.style.background = 'rgba(255,255,255,0.15)';
-            pinBtn.style.color = 'white';
-            pinBtn.style.border = '1px solid rgba(255,255,255,0.2)';
-            pinBtn.innerHTML = '📍';
+            pinBtn.style.background = 'rgba(0,0,0,0.18)';
+            pinBtn.style.border = '1px solid rgba(255,255,255,0.25)';
+            pinBtn.innerHTML = ICON_PIN_OUTLINE;
             // Close popup when unpinned
             currentSummaryData = null;
             currentLink = null;
@@ -317,11 +310,16 @@ function togglePin() {
     }
 }
 
-// --- Icon constants (lightweight SVG icons) ---
-const ICON_COPY = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-const ICON_SAVE_OUTLINE = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
-const ICON_SAVE_FILLED  = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
+// --- Icon constants (inline SVG — transparent background, no filter needed) ---
+const ICON_PIN_OUTLINE = `<svg width="14" height="14" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M0 0 C4.13639336 1.59092052 7.23213248 4.60474918 10 8 C10 8.66 10 9.32 10 10 C9.2575 10.37125 8.515 10.7425 7.75 11.125 C3.9763558 13.69793923 2.75150195 16.88054568 1 21 C-2.76687864 21 -3.91190305 20.76462683 -7 19 C-7.928125 19.99 -7.928125 19.99 -8.875 21 C-11 23 -11 23 -13 23 C-11 19 -11 19 -9 15 C-9.99 14.01 -10.98 13.02 -12 12 C-11.02079402 9.55198504 -10.42031559 8.25218936 -8.125 6.875 C-6 6 -6 6 -3.875 5.125 C-1.57968441 3.74781064 -0.97920598 2.44801496 0 0 Z M1 4 C-0.5021094 5.18251166 -2.00291203 6.3733768 -3.40234375 7.67578125 C-5.1589183 9.13171957 -6.93324068 10.04920144 -9 11 C-8.07347299 12.17539996 -7.13336613 13.34010577 -6.1875 14.5 C-5.66542969 15.1496875 -5.14335937 15.799375 -4.60546875 16.46875 C-3.00795167 18.34509128 -3.00795167 18.34509128 0 18 C0.6496875 16.6078125 0.6496875 16.6078125 1.3125 15.1875 C2.72038627 12.52815927 3.76123556 10.91894095 6 9 C5.20882096 7.00016466 5.20882096 7.00016466 4 5 C3.01 4.67 2.02 4.34 1 4 Z" fill="rgba(255,255,255,0.85)" transform="translate(18,4)"/></svg>`;
 
+const ICON_PIN_FILLED  = `<svg width="14" height="14" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M0 0 C3.2548802 0.58021778 4.93652408 1.52647141 7.25 3.875 C7.77078125 4.38804688 8.2915625 4.90109375 8.828125 5.4296875 C10 7 10 7 10 10 C9.236875 10.598125 8.47375 11.19625 7.6875 11.8125 C4.64924243 14.28550034 3.60867929 16.47622632 2 20 C1.34 20.66 0.68 21.32 0 22 C-1.875 21.625 -1.875 21.625 -4 21 C-7.87797662 20.56613908 -7.87797662 20.56613908 -9.75 22.5 C-10.1625 22.995 -10.575 23.49 -11 24 C-11.99 23.67 -12.98 23.34 -14 23 C-12 19 -12 19 -10 15 C-10.66 14.34 -11.32 13.68 -12 13 C-11.9375 11.0625 -11.9375 11.0625 -11 9 C-8.75 7.5 -8.75 7.5 -6 6 C-2.44768577 3.47024016 -2.44768577 3.47024016 0 0 Z" fill="#ffffff" transform="translate(18,4)"/></svg>`;
+
+const ICON_COPY        = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+
+const ICON_SAVE_OUTLINE= `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
+
+const ICON_SAVE_FILLED = `<svg width="15" height="15" viewBox="0 0 24 24" fill="#ffffff" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
 function copyToClipboard() {
     if (!currentSummaryData) return;
 
@@ -334,25 +332,30 @@ function copyToClipboard() {
     navigator.clipboard.writeText(fullText).then(() => {
         const copyBtn = document.getElementById('qs-copy-btn');
         if (copyBtn) {
-            copyBtn.innerHTML = '<span style="font-size:12px;font-weight:600;">✓ Copied</span>';
-            copyBtn.style.background = '#4ade80';
-            copyBtn.style.color = '#0a1a0a';
-
+            // Press animation: scale down then back
+            copyBtn.style.transition = 'transform 0.1s ease';
+            copyBtn.style.transform = 'scale(0.88)';
             setTimeout(() => {
-                copyBtn.style.transition = 'opacity 0.12s ease, background 0.12s ease, color 0.12s ease';
-                copyBtn.style.opacity = '0.15';
-                setTimeout(() => {
-                    copyBtn.innerHTML = ICON_COPY;
-                    copyBtn.style.background = 'rgba(255,255,255,0.08)';
-                    copyBtn.style.color = '#bec5d1';
-                    copyBtn.style.opacity = '1';
-                    setTimeout(() => { copyBtn.style.transition = 'all 0.2s ease'; }, 120);
-                }, 120);
-            }, 700);
+                copyBtn.style.transform = 'scale(1)';
+            }, 100);
         }
     }).catch(() => {
         alert('Failed to copy to clipboard');
     });
+}
+
+function setSaveBtnState(btn, saved) {
+    if (saved) {
+        btn.innerHTML = ICON_SAVE_FILLED;
+        btn.style.background = 'rgba(255,255,255,0.06)';
+        btn.style.border = '1px solid rgba(255,255,255,0.1)';
+        btn.setAttribute('data-tip', 'Unsave');
+    } else {
+        btn.innerHTML = ICON_SAVE_OUTLINE;
+        btn.style.background = 'rgba(255,255,255,0.06)';
+        btn.style.border = '1px solid rgba(255,255,255,0.1)';
+        btn.setAttribute('data-tip', 'Save for later');
+    }
 }
 
 async function saveSummary() {
@@ -373,7 +376,7 @@ async function saveSummary() {
             const newItem = {
                 id: Date.now(),
                 url: currentLink.href,
-                title: document.title,
+                title: (currentLink ? currentLink.textContent.trim() : '') || document.title,
                 summary: currentSummaryData.summary,
                 sentiment: currentSummaryData.sentiment || 'N/A',
                 category: currentSummaryData.category || 'Other',
@@ -397,12 +400,10 @@ async function saveSummary() {
                         document.getElementById('qs-save-btn');
 
                     if (saveBtn) {
-
-                        saveBtn.innerHTML = '🗑';
-
-                        saveBtn.style.background = '#ef4444';
-                        saveBtn.style.color = '#08111f';
-
+                        saveBtn.style.transition = 'transform 0.1s ease';
+                        saveBtn.style.transform = 'scale(0.88)';
+                        setTimeout(() => { saveBtn.style.transform = 'scale(1)'; }, 100);
+                        setSaveBtnState(saveBtn, true);
                     }
                 });
 
@@ -438,13 +439,10 @@ function removeSavedSummary(url) {
                 document.getElementById('qs-save-btn');
 
             if (saveBtn) {
-
-                saveBtn.innerHTML = '💾';
-
-                saveBtn.style.background =
-                    'rgba(255,255,255,0.08)';
-
-                saveBtn.style.color = '#bec5d1';
+                saveBtn.style.transition = 'transform 0.1s ease';
+                saveBtn.style.transform = 'scale(0.88)';
+                setTimeout(() => { saveBtn.style.transform = 'scale(1)'; }, 100);
+                setSaveBtnState(saveBtn, false);
             }
 
         });
@@ -454,68 +452,50 @@ function removeSavedSummary(url) {
 }
 
 function saveForLater() {
-    // TODO: Implement save for later functionality
-    // This will save the current summary to local storage or send to backend
-    if (!currentSummaryData) return;
-
-    const saveBtn = document.getElementById('qs-save-btn');
-    chrome.storage.local.get(['savedSummaries'], (result) => {
-
-    const saved = result.savedSummaries || [];
-
-    const exists = saved.some(
-        item => item.url === currentLink?.href
-    );
-
-    if (exists && saveBtn) {
-
-        saveBtn.innerHTML = '🗑';
-
-        saveBtn.style.background = '#ef4444';
-        saveBtn.style.color = 'white';
-
-        saveBtn.setAttribute(
-            'data-tip',
-            'Remove saved summary'
-        );
-    }
-
-});
-    if (saveBtn) {
-        saveBtn.innerHTML = '✓ Saved!';
-        saveBtn.style.background = '#4ade80';
-        saveBtn.style.color = '#0a1a0a';
-        saveBtn.style.fontWeight = '600';
-        saveBtn.style.fontSize = '12px';
-        saveBtn.style.opacity = '1';
-        setTimeout(() => {
-            saveBtn.style.transition = 'opacity 0.12s ease, background 0.12s ease, color 0.12s ease';
-            saveBtn.style.opacity = '0.15';
-            setTimeout(() => {
-                saveBtn.innerHTML = '💾';
-                saveBtn.style.background = 'rgba(255,255,255,0.08)';
-                saveBtn.style.color = '#bec5d1';
-                saveBtn.style.fontWeight = '';
-                saveBtn.style.fontSize = '14px';
-                saveBtn.style.opacity = '1';
-                setTimeout(() => { saveBtn.style.transition = 'all 0.2s ease'; }, 120);
-            }, 120);
-        }, 700);
-    }
+    saveSummary();
 }
 
 function sentimentStyle(sentiment) {
     const s = (sentiment || '').toLowerCase();
-    if (s === 'positif' || s === 'positive')
-        return { color: '#4ade80', bg: 'rgba(74,222,128,0.1)', border: 'rgba(74,222,128,0.25)' };
-    if (s === 'negatif' || s === 'negative')
-        return { color: '#ff6b6b', bg: 'rgba(255,107,107,0.1)', border: 'rgba(255,107,107,0.25)' };
-    return { color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.2)' };
+    
+    if (s === 'positif' || s === 'positive') {
+        return { 
+            bg: 'rgba(6, 78, 59, 0.75)',       
+            border: 'rgba(52, 211, 153, 0.4)', 
+            dot: '#4ade80',                   
+            text: '#ffffff'                   
+        };
+    }
+    if (s === 'negatif' || s === 'negative') {
+        return { 
+            bg: 'rgba(127, 29, 29, 0.75)',    
+            border: 'rgba(248, 113, 113, 0.4)',
+            dot: '#ff6b6b',                    
+            text: '#ffffff'                    
+        };
+    }
+    
+    // Netral / Default (Abu-abu transparan)
+    return { 
+        bg: 'rgba(0, 0, 0, 0.2)', 
+        border: 'rgba(255, 255, 255, 0.3)', 
+        dot: '#ffffff', 
+        text: 'rgba(255, 255, 255, 0.95)' 
+    };
 }
 
 function renderSummary(data) {
     currentSummaryData = data;
+    
+    // Auto-save summary to local storage
+    if (currentLink && currentLink.href) {
+        saveToHistory(currentLink.href, data);
+    }
+    
     const ss = sentimentStyle(data.sentiment);
+    
+    // Use the hovered link's own text as the title — matches the article headline
+    const pageTitle = (currentLink ? currentLink.textContent.trim() : '') || document.title || 'Summary';
 
     const bullets = Array.isArray(data.summary)
         ? data.summary.map((s, i) => `
@@ -523,17 +503,18 @@ function renderSummary(data) {
                 display: flex;
                 gap: 10px;
                 align-items: flex-start;
-                padding: 8px 0;
+                padding: 10px 0;
                 ${i < data.summary.length - 1 ? 'border-bottom: 1px solid rgba(255,255,255,0.045);' : ''}
                 list-style: none;
             ">
                 <span style="
-                    color: #ff6200;
-                    margin-top: 6px;
+                    color: #d8dde8;
+                    margin-top: 2px;
                     flex-shrink: 0;
-                    font-size: 6px;
-                    opacity: 0.9;
-                ">◆</span>
+                    font-size: 16px;
+                    opacity: 0.8;
+                    font-weight: 500;
+                ">→</span>
                 <span style="
                     color: #d8dde8;
                     font-size: 13px;
@@ -541,7 +522,7 @@ function renderSummary(data) {
                     font-weight: 400;
                 ">${s}</span>
             </li>`).join('')
-        : `<li style="color:#d8dde8; font-size:13px; list-style:none;">${data.summary}</li>`;
+        : `<li style="color:#d8dde8; font-size:13px; list-style:none;">→ ${data.summary}</li>`;
 
     popup.innerHTML = `
         <div class="qs-card" style="
@@ -552,162 +533,142 @@ function renderSummary(data) {
                 0 24px 64px rgba(0,0,0,0.75),
                 0 0 0 1px rgba(255,98,0,0.06),
                 inset 0 1px 0 rgba(255,255,255,0.04);
-            width: 340px;
+            width: 380px;
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         ">
-            <!-- Header bar -->
             <div style="
-                background: linear-gradient(105deg, #e85500 0%, #ff7a2e 100%);
-                padding: 9px 14px;
+                background: linear-gradient(135deg, #ff6b35 0%, #f97a1c 100%);
+                padding: 16px;
                 display: flex;
-                align-items: center;
-                gap: 7px;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
             ">
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M7 1L8.8 5.2L13.5 5.7L10.1 8.7L11.1 13.4L7 11L2.9 13.4L3.9 8.7L0.5 5.7L5.2 5.2L7 1Z" fill="rgba(255,255,255,0.9)"/>
-                </svg>
-                <span style="
-                    font-weight: 700;
-                    color: white;
-                    font-size: 10.5px;
-                    text-transform: uppercase;
-                    letter-spacing: 1.2px;
-                ">AI Summary</span>
-                <!-- Pin button -->
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+                    <div style="
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 5px;
+                        background: ${ss.bg};
+                        border: 1px solid ${ss.border};
+                        padding: 3px 10px;
+                        border-radius: 20px;
+                        width: fit-content;
+                    ">
+                        <span style="
+                            width: 6px; height: 6px;
+                            border-radius: 50%;
+                            background: ${ss.dot};
+                            display: inline-block;
+                            flex-shrink: 0;
+                        "></span>
+                        <span style="color: ${ss.text}; font-size: 11px; font-weight: 600;">${data.sentiment || 'N/A'}</span>
+                    </div>
+                    
+                    <h3 style="
+                        color: white;
+                        font-size: 16px;
+                        font-weight: 700;
+                        margin: 0;
+                        line-height: 1.4;
+                        word-wrap: break-word;
+                    ">${pageTitle}</h3>
+                    
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <span style="
+                            color: white;
+                            font-size: 11px;
+                            font-weight: 600;
+                            background: rgba(255,255,255,0.15);
+                            padding: 4px 10px;
+                            border-radius: 20px;
+                        ">${data.category || 'Other'}</span>
+                    </div>
+                </div>
+                
                 <button id="qs-pin-btn" style="
-                    background: rgba(255,255,255,0.15);
-                    border: 1px solid rgba(255,255,255,0.2);
-                    color: white;
-                    width: 26px;
-                    height: 26px;
+                    background: rgba(0,0,0,0.18);
+                    border: 1px solid rgba(255,255,255,0.25);
+                    width: 28px;
+                    height: 28px;
                     border-radius: 6px;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 12px;
                     transition: all 0.2s ease;
                     padding: 0;
-                    margin-left: auto;
-                ">📍</button>
+                    flex-shrink: 0;
+                "></button>
             </div>
 
-            <!-- Bullet points -->
-            <div style="padding: 6px 15px 10px 15px;">
+            <div style="padding: 12px 16px;">
                 <ul style="margin: 0; padding: 0;">
                     ${bullets}
                 </ul>
             </div>
 
-            <!-- Footer -->
             <div style="
                 background: #0a0b0e;
                 border-top: 1px solid #1a1d24;
-                padding: 10px 13px;
+                padding: 12px 16px;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                gap: 9px;
+                gap: 12px;
             ">
-                <!-- Sentiment & Category chips -->
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <div style="
-                        display: flex;
-                        align-items: center;
-                        gap: 5px;
-                        background: ${ss.bg};
-                        border: 1px solid ${ss.border};
-                        padding: 4px 10px 4px 8px;
-                        border-radius: 20px;
-                        flex-shrink: 0;
-                    ">
-                        <span style="
-                            width: 6px; height: 6px;
-                            border-radius: 50%;
-                            background: ${ss.color};
-                            display: inline-block;
-                            flex-shrink: 0;
-                        "></span>
-                        <span style="color: ${ss.color}; font-size: 11px; font-weight: 600;">${data.sentiment || 'N/A'}</span>
-                    </div>
+                <button id="qs-copy-btn" class="qs-icon-btn" data-tip="Copy" style="
+                    flex: 1;
+                    background: rgba(255,255,255,0.06);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    padding: 10px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s ease;
+                "></button>
 
-                    <div style="
-                        display: flex;
-                        align-items: center;
-                        gap: 5px;
-                        background: rgba(255,255,255,0.04);
-                        border: 1px solid rgba(255,255,255,0.1);
-                        padding: 4px 10px;
-                        border-radius: 20px;
-                        flex-shrink: 0;
-                    ">
-                        <span style="font-size: 11px;">🗂</span>
-                        <span style="color: #bec5d1; font-size: 11px; font-weight: 600;">${data.category || 'N/A'}</span>
-                    </div>
-                </div>
-
-                <!-- Copy & Save buttons -->
-                <div style="display: flex; gap: 6px;">
-                    <button id="qs-copy-btn" class="qs-icon-btn" data-tip="Copy" style="
-                        background: rgba(255,255,255,0.08);
-                        border: 1px solid rgba(255,255,255,0.12);
-                        color: #bec5d1;
-                        height: 28px;
-                        width: 32px;
-                        border-radius: 7px;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        transition: all 0.2s ease;
-                        padding: 0;
-                    "></button>
-
-                    <button id="qs-save-btn" class="qs-icon-btn" data-tip="Save for later" style="
-                        background: rgba(255,255,255,0.08);
-                        border: 1px solid rgba(255,255,255,0.12);
-                        color: #bec5d1;
-                        height: 28px;
-                        width: 32px;
-                        border-radius: 7px;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        transition: all 0.2s ease;
-                        padding: 0;
-                    "></button>
-                </div>
+                <button id="qs-save-btn" class="qs-icon-btn" data-tip="Save for later" style="
+                    flex: 1;
+                    background: rgba(255,255,255,0.06);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    padding: 10px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s ease;
+                "></button>
             </div>
         </div>
     `;
 
-    // Attach event listeners and set initial icon state
+    // Attach event listeners and set initial icon states
     setTimeout(async () => {
         const pinBtn  = document.getElementById('qs-pin-btn');
         const copyBtn = document.getElementById('qs-copy-btn');
         const saveBtn = document.getElementById('qs-save-btn');
 
-        if (pinBtn)  pinBtn.addEventListener('click', togglePin);
-
+        if (pinBtn) {
+            pinBtn.innerHTML = ICON_PIN_OUTLINE;
+            pinBtn.addEventListener('click', togglePin);
+        }
         if (copyBtn) {
             copyBtn.innerHTML = ICON_COPY;
             copyBtn.addEventListener('click', copyToClipboard);
         }
-
         if (saveBtn) {
             saveBtn.addEventListener('click', saveForLater);
-            // Async check: reflect saved state immediately on render
             const url = currentLink ? currentLink.href : window.location.href;
-            const items = await getSavedItems();
-            const isSaved = items.some(item => item.url === url);
-            setSaveBtnState(saveBtn, isSaved);
+            chrome.storage.local.get(['savedSummaries'], (result) => {
+                const isSaved = (result.savedSummaries || []).some(item => item.url === url);
+                setSaveBtnState(saveBtn, isSaved);
+            });
         }
-        
-        if (pinBtn) pinBtn.addEventListener('click', togglePin);
-        if (copyBtn) copyBtn.addEventListener('click', copyToClipboard);
-        if (saveBtn) saveBtn.addEventListener('click', saveSummary);
     }, 0);
 }
 
@@ -753,6 +714,48 @@ async function getSummary(url) {
         if (err.name === 'AbortError') return null;
         return null;
     }
+}
+
+// --- Local history helpers ---
+function saveToHistory(url, summaryData) {
+    const historyEntry = {
+        id: Date.now(),
+        url,
+        title: document.title || url,
+        summary: summaryData.summary,
+        sentiment: summaryData.sentiment || 'N/A',
+        category: summaryData.category || 'Other',
+        timestamp: new Date().toISOString(),
+        saved: false
+    };
+
+    chrome.storage.local.get(['summaryHistory'], (result) => {
+        const history = result.summaryHistory || [];
+        const index = history.findIndex(item => item.url === url);
+
+        if (index > -1) {
+            history[index] = { ...history[index], ...historyEntry };
+        } else {
+            history.unshift(historyEntry);
+        }
+
+        if (history.length > 100) {
+            history.splice(100);
+        }
+
+        chrome.storage.local.set({ summaryHistory: history });
+    });
+}
+
+function markAsSaved(url) {
+    chrome.storage.local.get(['summaryHistory'], (result) => {
+        const history = result.summaryHistory || [];
+        const item = history.find(entry => entry.url === url);
+        if (!item) return;
+
+        item.saved = true;
+        chrome.storage.local.set({ summaryHistory: history });
+    });
 }
 
 // --- Toast notification ---
