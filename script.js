@@ -6,6 +6,7 @@ let currentRequest = null;
 let requestInProgress = false;
 let isPinned = false;
 let currentSummaryData = null;
+isActive = true;
 
 // Inject global styles once — ONLY .qs-spinner-circle animates, not its parent or siblings
 const style = document.createElement('style');
@@ -349,81 +350,157 @@ function copyToClipboard() {
                 }, 120);
             }, 700);
         }
-    }).catch(() => alert('Failed to copy to clipboard'));
-}
-
-// Returns a Promise so it can be awaited when checking saved status
-function getSavedItems() {
-    return new Promise((resolve) => {
-        chrome.storage.local.get(['SavedItems'], (result) => {
-            resolve(result.SavedItems || []);
-        });
+    }).catch(() => {
+        alert('Failed to copy to clipboard');
     });
 }
 
-// Updates the save button visual state (saved vs unsaved)
-function setSaveBtnState(saveBtn, saved) {
-    if (saved) {
-        saveBtn.innerHTML = ICON_SAVE_FILLED;
-        saveBtn.style.background = 'rgba(74,222,128,0.15)';
-        saveBtn.style.color = '#4ade80';
-        saveBtn.style.border = '1px solid rgba(74,222,128,0.35)';
-        saveBtn.setAttribute('data-tip', 'Unsave');
-    } else {
-        saveBtn.innerHTML = ICON_SAVE_OUTLINE;
-        saveBtn.style.background = 'rgba(255,255,255,0.08)';
-        saveBtn.style.color = '#bec5d1';
-        saveBtn.style.border = '1px solid rgba(255,255,255,0.12)';
-        saveBtn.setAttribute('data-tip', 'Save for later');
+async function saveSummary() {
+
+    console.log('SAVE CLICKED');
+
+    if (!currentSummaryData || !currentLink) {
+        console.log('Missing summary or link');
+        return;
+    }
+
+    try {
+
+        chrome.storage.local.get(['savedSummaries'], (result) => {
+
+            const saved = result.savedSummaries || [];
+
+            const newItem = {
+                id: Date.now(),
+                url: currentLink.href,
+                title: document.title,
+                summary: currentSummaryData.summary,
+                sentiment: currentSummaryData.sentiment || 'N/A',
+                category: currentSummaryData.category || 'Other',
+                savedAt: new Date().toISOString()
+            };
+
+            const alreadyExists = saved.some(
+                item => item.url === newItem.url
+            );
+
+            if (!alreadyExists) {
+                saved.unshift(newItem);
+
+                chrome.storage.local.set({
+                    savedSummaries: saved
+                }, () => {
+
+                    console.log('Saved successfully');
+
+                    const saveBtn =
+                        document.getElementById('qs-save-btn');
+
+                    if (saveBtn) {
+
+                        saveBtn.innerHTML = '🗑';
+
+                        saveBtn.style.background = '#ef4444';
+                        saveBtn.style.color = '#08111f';
+
+                    }
+                });
+
+            } else {
+                removeSavedSummary(newItem.url);
+            }
+
+        });
+
+    } catch (err) {
+        console.error(
+            '[QuickSummarizer] Failed to save summary:',
+            err
+        );
     }
 }
 
-// Toggle save/remove logic using Chrome Storage
-async function saveForLater() {
+function removeSavedSummary(url) {
+
+    chrome.storage.local.get(['savedSummaries'], (result) => {
+
+        const saved = result.savedSummaries || [];
+
+        const updated = saved.filter(item => item.url !== url);
+
+        chrome.storage.local.set({
+            savedSummaries: updated
+        }, () => {
+
+            console.log('Removed from saved');
+
+            const saveBtn =
+                document.getElementById('qs-save-btn');
+
+            if (saveBtn) {
+
+                saveBtn.innerHTML = '💾';
+
+                saveBtn.style.background =
+                    'rgba(255,255,255,0.08)';
+
+                saveBtn.style.color = '#bec5d1';
+            }
+
+        });
+
+    });
+
+}
+
+function saveForLater() {
+    // TODO: Implement save for later functionality
+    // This will save the current summary to local storage or send to backend
     if (!currentSummaryData) return;
 
     const saveBtn = document.getElementById('qs-save-btn');
-    const url = currentLink ? currentLink.href : window.location.href;
+    chrome.storage.local.get(['savedSummaries'], (result) => {
 
-    // Fetch latest data from extension storage
-    const items = await getSavedItems();
-    const existingIndex = items.findIndex(item => item.url === url);
-    const alreadySaved = existingIndex !== -1;
+    const saved = result.savedSummaries || [];
 
-    // Click animation (fade out)
-    if (saveBtn) saveBtn.style.opacity = '0.15';
+    const exists = saved.some(
+        item => item.url === currentLink?.href
+    );
 
-    if (alreadySaved) {
-        // Remove if already saved
-        items.splice(existingIndex, 1);
-        chrome.storage.local.set({ SavedItems: items }, () => {
-            if (saveBtn) {
-                setTimeout(() => {
-                    setSaveBtnState(saveBtn, false);
-                    saveBtn.style.opacity = '1';
-                }, 120);
-            }
-        });
-    } else {
-        // Save entry to SavedItems
-        const entry = {
-            url,
-            title: document.title || url,
-            summary: currentSummaryData.summary,
-            sentiment: currentSummaryData.sentiment,
-            category: currentSummaryData.category,
-            savedAt: new Date().toISOString(),
-        };
-        items.push(entry);
+    if (exists && saveBtn) {
 
-        chrome.storage.local.set({ SavedItems: items }, () => {
-            if (saveBtn) {
-                setTimeout(() => {
-                    setSaveBtnState(saveBtn, true);
-                    saveBtn.style.opacity = '1';
-                }, 120);
-            }
-        });
+        saveBtn.innerHTML = '🗑';
+
+        saveBtn.style.background = '#ef4444';
+        saveBtn.style.color = 'white';
+
+        saveBtn.setAttribute(
+            'data-tip',
+            'Remove saved summary'
+        );
+    }
+
+});
+    if (saveBtn) {
+        saveBtn.innerHTML = '✓ Saved!';
+        saveBtn.style.background = '#4ade80';
+        saveBtn.style.color = '#0a1a0a';
+        saveBtn.style.fontWeight = '600';
+        saveBtn.style.fontSize = '12px';
+        saveBtn.style.opacity = '1';
+        setTimeout(() => {
+            saveBtn.style.transition = 'opacity 0.12s ease, background 0.12s ease, color 0.12s ease';
+            saveBtn.style.opacity = '0.15';
+            setTimeout(() => {
+                saveBtn.innerHTML = '💾';
+                saveBtn.style.background = 'rgba(255,255,255,0.08)';
+                saveBtn.style.color = '#bec5d1';
+                saveBtn.style.fontWeight = '';
+                saveBtn.style.fontSize = '14px';
+                saveBtn.style.opacity = '1';
+                setTimeout(() => { saveBtn.style.transition = 'all 0.2s ease'; }, 120);
+            }, 120);
+        }, 700);
     }
 }
 
@@ -627,6 +704,10 @@ function renderSummary(data) {
             const isSaved = items.some(item => item.url === url);
             setSaveBtnState(saveBtn, isSaved);
         }
+        
+        if (pinBtn) pinBtn.addEventListener('click', togglePin);
+        if (copyBtn) copyBtn.addEventListener('click', copyToClipboard);
+        if (saveBtn) saveBtn.addEventListener('click', saveSummary);
     }, 0);
 }
 

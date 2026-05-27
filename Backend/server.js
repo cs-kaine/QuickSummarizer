@@ -74,15 +74,21 @@ ${sourceData}
 
         // Calling Gemini 2.5 Flash model 
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-lite',
+            model: 'gemini-2.5-flash',
             contents: systemPrompt,
             config: {
                 responseMimeType: "application/json", 
                 temperature: 0.3 
             }
         });
-        const geminiResult = JSON.parse(response.text);
+        let rawText = response.text.trim();
 
+rawText = rawText
+    .replace(/```json/g, '')
+    .replace(/```/g, '')
+    .trim();
+
+const geminiResult = JSON.parse(rawText);
         // Save to cache
         if (url) {
             summaryCache[url] = geminiResult;
