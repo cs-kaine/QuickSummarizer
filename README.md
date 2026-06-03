@@ -10,13 +10,13 @@
 
 ## ✨ Key Features
 
-- 🖱️ **Hover-to-Summarize:** Hover over any valid article link for 1.5 seconds to trigger the AI summary. Features a visual intent progress bar to prevent accidental triggers.
-- 🧠 **Gemini AI Integration:** Utilizes Google Gemini (via local proxy) to deliver accurate, bullet-point summaries in seconds.
-- 📊 **Smart Analysis:** Automatically detects and displays the article's Category and Sentiment (Positive, Negative, Neutral) with dynamically colored UI badges.
-- 💾 **Save for Later:** Bookmark your favorite summaries locally using Chrome's `storage.local` API. Access them anytime from the extension popup.
-- 📋 **One-Click Copy:** Easily copy the generated summary, sentiment, and category to your clipboard.
-- 🎨 **Premium UI/UX:** Built with a sleek Dark Mode interface, skeleton loading animations, inline SVG icons, and a highly responsive design.
-- 🛡️ **Robust Error Handling:** Includes graceful degradation for API timeouts and 503 errors, ensuring the browser never hangs.
+- **Hover-to-Summarize:** Hover over any valid article link for 1.5 seconds to trigger the AI summary. Features a visual intent progress bar to prevent accidental triggers.
+- **Gemini AI Integration:** Utilizes Google Gemini (via local proxy) to deliver accurate, bullet-point summaries in seconds.
+- **Smart Analysis:** Automatically detects and displays the article's Category and Sentiment (Positive, Negative, Neutral) with dynamically colored UI badges.
+- **Save for Later:** Bookmark your favorite summaries locally using Chrome's `storage.local` API. Access them anytime from the extension popup.
+- **One-Click Copy:** Easily copy the generated summary, sentiment, and category to your clipboard.
+- **Premium UI/UX:** Built with a sleek Dark Mode interface, skeleton loading animations, inline SVG icons, and a highly responsive design.
+- **Robust Error Handling:** Includes graceful degradation for API timeouts and 503 errors, ensuring the browser never hangs.
 
 ---
 
@@ -72,8 +72,8 @@ Since this extension communicates with a local backend proxy (to securely hold t
 3. **Wait for the Cue:** A subtle progress bar will appear at the bottom of the screen. Keep hovering for **1.5 seconds**.
 4. **Read the Summary:** A sleek popup will appear — skeleton loader first, then AI-generated bullet points, category, and sentiment.
 5. **Interact:** Use the footer buttons to:
-   - 📋 **Copy** the summary text to your clipboard.
-   - 💾 **Save** it to your local dashboard (click again to unsave).
+   - **Copy** the summary text to your clipboard.
+   - **Save** it to your local dashboard (click again to unsave).
 6. **View Saved Items:** Click the extension icon in the Chrome toolbar to open the popup dashboard and view/manage all saved summaries.
 
 ---
@@ -123,4 +123,3 @@ Contributions, issues, and feature requests are welcome!
 
 ---
 
-*Built with ❤️ — Powered by Gemini AI*
