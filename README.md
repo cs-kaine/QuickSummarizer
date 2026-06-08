@@ -40,7 +40,7 @@ Since this extension communicates with a local backend proxy (to securely hold t
 1. Navigate to your backend server directory.
 2. Install dependencies:
    ```bash
-   npm install express cors dotenv @google/generative-ai
+   npm install express cors dotenv @google/genai
    ```
 3. Set your Google Gemini API Key in your environment variables (`.env`):
    ```env
@@ -56,7 +56,7 @@ Since this extension communicates with a local backend proxy (to securely hold t
 
 1. Clone or download this repository to your local machine:
    ```bash
-   git clone https://github.com/your-username/quicksummarizer.git
+   git clone https://github.com/cs-kaine/QuickSummarizer.git
    ```
 2. Open Google Chrome and navigate to `chrome://extensions/`.
 3. Enable **"Developer mode"** by toggling the switch in the top right corner.
