@@ -37,16 +37,20 @@ Since this extension communicates with a local backend proxy (to securely hold t
 
 *Ensure you have Node.js installed.*
 
-1. Navigate to your backend server directory.
-2. Install dependencies:
+1. Clone or download this repository to your local machine:
+   ```bash
+   git clone https://github.com/cs-kaine/QuickSummarizer.git
+   ```
+2. Navigate to your backend server directory.
+3. Install dependencies:
    ```bash
    npm install express cors dotenv @google/genai
    ```
-3. Set your Google Gemini API Key in your environment variables (`.env`):
+4. Set your Google Gemini API Key in your environment variables (`.env`):
    ```env
    GEMINI_API_KEY=your_api_key_here
    ```
-4. Start the server on port 3000:
+5. Start the server on port 3000:
    ```bash
    node server.js
    ```
@@ -54,14 +58,10 @@ Since this extension communicates with a local backend proxy (to securely hold t
 
 ### 2. Chrome Extension Setup
 
-1. Clone or download this repository to your local machine:
-   ```bash
-   git clone https://github.com/cs-kaine/QuickSummarizer.git
-   ```
-2. Open Google Chrome and navigate to `chrome://extensions/`.
-3. Enable **"Developer mode"** by toggling the switch in the top right corner.
-4. Click **"Load unpacked"** in the top left corner.
-5. Select the folder containing the QuickSummarizer extension files (the folder containing `manifest.json`).
+1. Open Google Chrome and navigate to `chrome://extensions/`.
+2. Enable **"Developer mode"** by toggling the switch in the top right corner.
+3. Click **"Load unpacked"** in the top left corner.
+4. Select the folder containing the QuickSummarizer extension files (the folder containing `manifest.json`).
 
 ---
 
